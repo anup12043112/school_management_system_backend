@@ -1,20 +1,43 @@
 from rest_framework import serializers
-from .models import User, Teacher, Student, Parent, Section, Subject, TeachingAssignment, Attendance, Marks, Notice 
+from .models import (
+    User,
+    Teacher,
+    Student,
+    Parent,
+    Section,
+    Subject,
+    TeachingAssignment,
+    Attendance,
+    Marks,
+    Notice,
+)
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "username", "first_name", "last_name", "role"]
+        fields = ["id", "username", "first_name", "last_name", "role", "password"]
+    
+    def get_fields(self):
+        fields = super().get_fields()
+        if self.instance is not None:
+            fields["password"].read_only = True
+        return fields
+
+    def create(self, validated_data):
+        password = validated_data.pop("password")
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+        return user
 
 
 class TeacherSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True) 
+    user = UserSerializer(read_only=True)
     teacher_id = serializers.PrimaryKeyRelatedField(
-        queryset = User.objects.all(),
-        write_only = True,
-        source = "user"
+        queryset=User.objects.all(), write_only=True, source="user"
     )
+
     class Meta:
         model = Teacher
         fields = "__all__"
@@ -28,22 +51,19 @@ class TeacherSerializer(serializers.ModelSerializer):
 
 
 class StudentSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True) 
-    section = serializers.SlugRelatedField(slug_field = "section", read_only = True)
+    user = UserSerializer(read_only=True)
+    section = serializers.SlugRelatedField(slug_field="section", read_only=True)
     student_id = serializers.PrimaryKeyRelatedField(
-        queryset = User.objects.all(),
-        write_only = True,
-        source = "user"
+        queryset=User.objects.all(), write_only=True, source="user"
     )
     section_id = serializers.PrimaryKeyRelatedField(
-        queryset = Section.objects.all(),
-        write_only = True,
-        source = "section"
+        queryset=Section.objects.all(), write_only=True, source="section"
     )
+
     class Meta:
         model = Student
         fields = "__all__"
-    
+
     def get_fields(self):
         fields = super().get_fields()
         role = self.context.get("request").user.role
@@ -51,22 +71,18 @@ class StudentSerializer(serializers.ModelSerializer):
             fields["user"].read_only = True
             fields["section"].read_only = True
         return fields
-    
-    
 
-class ParentSerializer(serializers.ModelSerializer):  
-    user = UserSerializer(read_only=True) 
+
+class ParentSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
     children = StudentSerializer(read_only=True)
     parent_id = serializers.PrimaryKeyRelatedField(
-        queryset=Parent.objects.all(),
-        source="user",
-        write_only=True
+        queryset=Parent.objects.all(), source="user", write_only=True
     )
     children_id = serializers.PrimaryKeyRelatedField(
-        queryset=Student.objects.all(),
-        source="student",
-        write_only=True
+        queryset=Student.objects.all(), source="student", write_only=True
     )
+
     class Meta:
         model = Parent
         fields = "__all__"
@@ -93,59 +109,49 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 
 class TeachingAssignmentSerializer(serializers.ModelSerializer):
-    teacher = TeacherSerializer(read_only = True)
-    subject = SubjectSerializer(read_only = True)
-    section = SectionSerializer(read_only = True)
+    teacher = TeacherSerializer(read_only=True)
+    subject = SubjectSerializer(read_only=True)
+    section = SectionSerializer(read_only=True)
     teacher_id = serializers.PrimaryKeyRelatedField(
-        queryset=Teacher.objects.all(),
-        source="teacher",
-        write_only=True
+        queryset=Teacher.objects.all(), source="teacher", write_only=True
     )
     subject_id = serializers.PrimaryKeyRelatedField(
-        queryset=Subject.objects.all(),
-        source="subject",
-        write_only=True
+        queryset=Subject.objects.all(), source="subject", write_only=True
     )
     section_id = serializers.PrimaryKeyRelatedField(
-        queryset=Section.objects.all(), 
-        source="section",
-        write_only=True
+        queryset=Section.objects.all(), source="section", write_only=True
     )
-    
+
     class Meta:
         model = TeachingAssignment
         fields = "__all__"
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
-    student = StudentSerializer(read_only=True) 
+    student = StudentSerializer(read_only=True)
     student_id = serializers.PrimaryKeyRelatedField(
-        queryset = Student.objects.all(),
-        write_only = True,
-        source = "student"
-    ) 
+        queryset=Student.objects.all(), write_only=True, source="student"
+    )
+
     class Meta:
         model = Attendance
         fields = "__all__"
 
 
 class MarksSerializer(serializers.ModelSerializer):
-    student = StudentSerializer(read_only = True)
-    subject = SubjectSerializer(read_only = True)
+    student = StudentSerializer(read_only=True)
+    subject = SubjectSerializer(read_only=True)
     student_id = serializers.PrimaryKeyRelatedField(
-        queryset=Student.objects.all(),
-        source="student",
-        write_only=True
+        queryset=Student.objects.all(), source="student", write_only=True
     )
     subject_id = serializers.PrimaryKeyRelatedField(
-        queryset=Subject.objects.all(),
-        source="subject",
-        write_only=True
+        queryset=Subject.objects.all(), source="subject", write_only=True
     )
+
     class Meta:
         model = Marks
-        fields = "__all__" 
-    
+        fields = "__all__"
+
     def get_fields(self):
         fields = super().get_fields()
         if self.instance is not None:

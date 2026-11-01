@@ -48,9 +48,12 @@ class UserView(ModelViewSet):
     filter_backends = [SearchFilter]
     search_fields = ["first_name", "last_name", "username"]
 
-    # def get_queryset(self):
-
-    #     return super().get_queryset()
+    def get_queryset(self):
+        queryset = User.objects.all()
+        role = self.request.query_params.get("role")
+        if role:
+            return queryset.filter(role=role)
+        return queryset
 
 
 class TeacherView(ModelViewSet):

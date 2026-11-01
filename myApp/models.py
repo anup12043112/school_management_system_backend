@@ -23,8 +23,7 @@ class Teacher(models.Model):
     address = models.CharField(max_length=300)
 
     def __str__(self):
-        return self.user.username 
-
+        return self.user.username
 
 
 class Student(models.Model):
@@ -33,22 +32,24 @@ class Student(models.Model):
     email = models.EmailField()
     address = models.CharField(max_length=200)
     phone = models.CharField(max_length=15)
-    section = models.ForeignKey("Section", on_delete=models.CASCADE, related_name="students")
+    section = models.ForeignKey(
+        "Section", on_delete=models.CASCADE, related_name="students"
+    )
 
     def __str__(self):
-        return self.user.username 
-    
+        return self.user.username
 
 
 class Parent(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15)
     email = models.EmailField()
-    children = models.OneToOneField(Student, on_delete=models.CASCADE, related_name="parent")
+    children = models.OneToOneField(
+        Student, on_delete=models.CASCADE, related_name="parent"
+    )
 
     def __str__(self):
-        return self.user.username 
-
+        return self.user.username
 
 
 class Section(models.Model):
@@ -72,12 +73,13 @@ class TeachingAssignment(models.Model):
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"{self.teacher.user.username} - {self.section.section}"  
-
+        return f"{self.teacher.user.username} - {self.section.section}"
 
 
 class Attendance(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="attendance")
+    student = models.ForeignKey(
+        Student, on_delete=models.CASCADE, related_name="attendance"
+    )
     attendance = models.BooleanField()
     date = models.DateField()
 
@@ -87,10 +89,8 @@ class Attendance(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["student", "date"],
-                name = "student_attendance" 
+                fields=["student", "date"], name="student_attendance"
             )
-
         ]
 
 
@@ -109,8 +109,8 @@ class Marks(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields = ['student', 'subject', 'exam'],
-                name = 'unique_student_subject_exam'
+                fields=["student", "subject", "exam"],
+                name="unique_student_subject_exam",
             )
         ]
 
@@ -126,3 +126,14 @@ class Notice(models.Model):
 
     def __str__(self):
         return f"{self.header} -- {self.posted_by}"
+
+
+class ActivityLogs(models.Model):
+    action = models.CharField(max_length=20)
+    actor = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="activity_logs")
+    model_name = models.CharField(max_length=50)
+    object_id = models.PositiveIntegerField()
+    description = models.TextField()
+    changes = models.JSONField(default=dict)
+    comment = models.TextField(blank=True) #Optional 
+    created_at = models.DateTimeField(auto_now_add=True)
